@@ -117,16 +117,12 @@ namespace ns3
 
     std::map<Time, Time> m_bufferState;
     uint32_t m_rateChanges;
-    Time m_target_dt;//it is not total buffer time
+    Time m_target_dt;//total buffer time
     std::map<Time, double> m_bitrates;
     double m_bitrateEstimate;
     uint32_t m_segmentId;    // The id of the current segment
-	//fix m_totalsegment to 64
-    uint32_t m_totalsegment=72;
+    uint32_t m_totalsegment=48;
     uint32_t m_segmentLeft;
-
-
-
     std::ofstream buffer_output;
     std::ofstream lastdownloadtime;
     std::ofstream rebufftime_output;
@@ -135,20 +131,6 @@ namespace ns3
     std::ofstream m_segmentId_output;
     std::ofstream permission;
 	std::ofstream time_output;
-
-
-	//open in algorithmsClient.cc
-	//close in dash-client.cc StopApplication()
-
-	std::ofstream log_output;
-
-	double s_lastTime=0.3;
-	double s_lastBuffer=0.0;
-
-
-	std::ofstream s_real_buffer_output;
-
-	std::ofstream tcp_output;
 
   private:
 
@@ -182,18 +164,9 @@ namespace ns3
     DataSend(Ptr<Socket>, uint32_t); // Called when the data has been transmitted
     void
     HandleRead(Ptr<Socket>); // Called when we receive data from the server
-
-	void 
-	setSupplement(double time,double buffer);
-
-	void
-	tcpMonitor();
-
-
-
     virtual void
     CalcNextSegment(uint32_t currRate, uint32_t & nextRate, 
-      Time & delay, Time m_segmentFetchTime, int id, Time CurrDt,uint32_t m_segmentId);
+      Time & delay, Time m_segmentFetchTime, int id, Time CurrDt);
     void
     LogBufferLevel(Time t);
     void inline
@@ -222,14 +195,6 @@ namespace ns3
     uint32_t m_bitRate;      // The bitrate of the current segment.
     Time m_window;
     Time m_segmentFetchTime;
-
-	uint32_t m_numChunk;
-
-
-	uint32_t m_tcpPackageBytes=0;
-	double m_tcpMonitorTime=1.0;
-
-
 
   };
 

@@ -9,9 +9,6 @@
 #include <ns3/log.h>
 #include <ns3/simulator.h>
 #include <ns3/dash-client.h>
-#include <string>
-std::string TRACE_NAME_BB="null";
-int USERS_BB=0;
 
 
 NS_LOG_COMPONENT_DEFINE("BbClient");
@@ -42,40 +39,61 @@ namespace ns3
 
   void
   BbClient::CalcNextSegment(uint32_t currRate, uint32_t & nextRate,
-      Time & delay, Time m_segmentFetchTime, int id, Time currDt,uint32_t m_segmentId)
+      Time & delay, Time m_segmentFetchTime, int id, Time currDt)
   {
 
+    //double rebufftime = std::max(m_segmentFetchTime.GetSeconds() - 4.0, 0.0);
+	//this rebufftime is error?
+	
+
+	double rebufftime = std::max(m_segmentFetchTime.GetSeconds()-currDt.GetSeconds(),0.0);
+    //double currDt = GetBufferEstimate();//bufferlevel is estimated
+    std::ifstream predict_input;
+    std::ifstream contiornot;
+    char flag[4];
+	
+    rebufftime_output<<rebufftime<<std::endl;
+    buffer_output<<currDt.GetSeconds()<<std::endl;
+    lastdownloadtime<<m_segmentFetchTime.GetSeconds()<<std::endl;
+    currRate_output<<currRate<<std::endl;
+    chunk_size<<currRate/8*4<<std::endl;
+	time_output<<Simulator::Now().GetSeconds()<<std::endl;
+    
+    permission.open("./src/dash/model/algorithms/data/permission"+std::to_string(id));
+    permission<<1;
+    permission.close();
+
+    
+    while(1)
+      {
+        contiornot.open("./src/dash/model/algorithms/data/permission"+std::to_string(id));
+        contiornot >> flag;
+        if (flag[1]=='0')
+        {
+          break;
+        }
+        contiornot.close();
+      }
+    
+
+    predict_input.open("./src/dash/model/algorithms/data/predict"+std::to_string(id));
+    while(!predict_input.eof())
+    {
+      predict_input >> nextRate;
+    }
+    predict_input.close();
 
 
-	  double bufferLevel = currDt.GetSeconds();
-	  double nowtime=Simulator::Now().GetSeconds();
-	  double lastdownloadtime=m_segmentFetchTime.GetSeconds();
-	  double rebuf=std::max(lastdownloadtime-lastbuffer,0.0);
-	  uint32_t chunk_size=(currRate/8)*4;
-	  lastbuffer=bufferLevel;
-	  if(bufferLevel < RESEVOIR){
-		  nextRate=bitRate[0];
-	  }
-	  else if(bufferLevel >= RESEVOIR + CUSHION){
-		  nextRate=bitRate[5];
-	  }
-	  else{
-		  int index=(int)(5*(bufferLevel-RESEVOIR)/CUSHION);
-		  nextRate=bitRate[std::max(index,0)];
-	  }
-	  //}
-	  double rateDiff=currRate>=lastRate?currRate-lastRate:lastRate-currRate;
-	  lastRate=currRate;
-	  double reward=currRate/1000000.0-rebufPenalty*rebuf-smoothPenalty*rateDiff/1000000.0;
-	if(log_output.is_open()){
-		log_output<<nowtime<<" "<<currRate<<" "<<bufferLevel<<" "<<rebuf<<" "<<chunk_size<<" "<<lastdownloadtime<<" "<<reward<<" "<<std::endl;
-	  }
-	  else{
-		log_output.open("./src/dash/model/algorithms/results/log_"+TRACE_NAME_BB.substr(7)+"_"+GetTypeId().GetName().substr(5,GetTypeId().GetName().length()-11)+"_"+std::to_string(USERS_BB)+"_"+std::to_string(id));
-		s_real_buffer_output.open("./src/dash/model/algorithms/results/realbuffer_"+TRACE_NAME_BB.substr(7)+"_"+GetTypeId().GetName().substr(5,GetTypeId().GetName().length()-11)+"_"+std::to_string(USERS_BB)+"_"+std::to_string(id));
-		log_output<<nowtime<<" "<<currRate<<" "<<bufferLevel<<" "<<rebuf<<" "<<chunk_size<<" "<<lastdownloadtime<<" "<<reward<<" "<<std::endl;
-	  }
+    
+    NS_LOG_INFO(
+        "currDt: " << currDt);
+
+
+    NS_LOG_INFO(currRate);
+
+    /*result = result > 100000 ? result : 100000;
+     result = result < 400000 ? result : 400000;*/
+
   }
-
 
 } /* namespace ns3 */

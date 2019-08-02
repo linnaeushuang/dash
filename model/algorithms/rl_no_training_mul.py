@@ -3,7 +3,7 @@ os.environ['CUDA_VISIBLE_DEVICES']=''
 import numpy as np
 import tensorflow as tf
 import a3c
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import sys
 import multiprocessing as mp
 
@@ -23,14 +23,14 @@ DEFAULT_QUALITY = 0  # default video quality without agent
 RANDOM_SEED = 42
 RAND_RANGE = 1000
 SUMMARY_DIR = './results'
-LOG_FILE = './results/log'
+LOG_FILE = './results/log_rl'
 # log in format of time_stamp bit_rate buffer_size rebuffer_time chunk_size download_time reward
 NN_MODEL = './models/pretrain_linear_reward.ckpt'
 
 DATA_PATH = './data'
 
 
-def main( m_id ,usersnumber,tracename='none',allvideochunk=64):
+def main( m_id ):
 
     np.random.seed(RANDOM_SEED)
 
@@ -39,9 +39,8 @@ def main( m_id ,usersnumber,tracename='none',allvideochunk=64):
     if not os.path.exists(SUMMARY_DIR):
         os.makedirs(SUMMARY_DIR)
 
-    # log_path need to fix
 
-    log_path = LOG_FILE + '_'+tracename+'_Pensieve_'+str(usersnumber)+'_' + str(m_id)
+    log_path = LOG_FILE + '_sim_mul_' + str(m_id) + '_0'
     log_file = open(log_path, 'wb')
 
     with tf.Session() as sess:
@@ -84,20 +83,13 @@ def main( m_id ,usersnumber,tracename='none',allvideochunk=64):
         rebuf_file = open(DATA_PATH + '/rebufftime' + str(m_id))
         video_chunk_size_file = open(DATA_PATH + '/chunk_size' + str(m_id))
         video_chunk_remain_file = open(DATA_PATH + '/m_segmentleft' + str(m_id))
-        time_file = open(DATA_PATH + '/time' + str(m_id))
-
-        currChunk=0
         
-        while currChunk!=allvideochunk:  # serve video forever
+        while True:  # serve video forever
             # the action is from the last decision
             # this is to make the framework similar to the real
             with open(DATA_PATH + '/permission' + str(m_id)) as enable:
                 key = enable.read()
                 if key == '1':
-
-                    currChunk+=1
-
-
                     output_file = open(DATA_PATH + '/predict' + str(m_id),'a')
                     file_permission = open(DATA_PATH + '/permission' + str(m_id),'a')
                     
@@ -117,7 +109,6 @@ def main( m_id ,usersnumber,tracename='none',allvideochunk=64):
                     next_video_chunk_sizes = np.multiply(VIDEO_BIT_RATE, 500)
                     
                     video_chunk_remain = float(video_chunk_remain_file.readline().split('\n')[0])
-                    currTime = time_file.readline().split('\n')[0]
                     
                     if video_chunk_remain == 0:
                         end_of_video = 1
@@ -138,24 +129,14 @@ def main( m_id ,usersnumber,tracename='none',allvideochunk=64):
                     last_bit_rate = bit_rate
 
                     # log time_stamp, bit_rate, buffer_size, reward
-                    #log_file.write(str(time_stamp / M_IN_K) + '\t' +
-                    #               str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
-                    #               str(buffer_size) + '\t' +
-                    #               str(rebuf) + '\t' +
-                    #               str(video_chunk_size) + '\t' +
-                    #               str(delay) + '\t' +
-                    #               str(reward) + '\n')
-                    #log_file.flush()
-                    # log time_stamp, bit_rate, buffer_size, reward
-                    log_file.write(str(currTime) + '\t' +
-                                   str(VIDEO_BIT_RATE[bit_rate]*1000) + '\t' +
+                    log_file.write(str(time_stamp / M_IN_K) + '\t' +
+                                   str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
                                    str(buffer_size) + '\t' +
                                    str(rebuf) + '\t' +
-                                   str(int(video_chunk_size)) + '\t' +
+                                   str(video_chunk_size) + '\t' +
                                    str(delay) + '\t' +
                                    str(reward) + '\n')
                     log_file.flush()
-
 
                     # retrieve previous state
                     if len(s_batch) == 0:
@@ -192,9 +173,8 @@ def main( m_id ,usersnumber,tracename='none',allvideochunk=64):
                     
 
                     if end_of_video:
-                        #log_file.write('\n')
-
-                        #log_file.close()
+                        log_file.write('\n')
+                        log_file.close()
 
                         last_bit_rate = DEFAULT_QUALITY
                         bit_rate = DEFAULT_QUALITY  # use the default action here
@@ -213,19 +193,16 @@ def main( m_id ,usersnumber,tracename='none',allvideochunk=64):
                         print "video count", video_count
                         video_count += 1
 
-                        '''
                         log_path = LOG_FILE + '_sim_mul_' + str(m_id) + '_' + str(video_count)
                         log_file = open(log_path, 'wb')
-                        '''
+
 
 if __name__ == '__main__':
     users = sys.argv[1]
-    tracename=sys.argv[2]
-    allvideochunk=int(sys.argv[3])
     users = int(users)
     clients = []
     for t in xrange(users):
-        clients.append(mp.Process(target=main,args = (t,users,tracename,allvideochunk,)))
+        clients.append(mp.Process(target=main,args = (t,)))
     for t in xrange(users):
         clients[t].start()
     for t in xrange(users):

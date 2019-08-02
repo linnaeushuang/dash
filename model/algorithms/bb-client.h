@@ -25,28 +25,11 @@ namespace ns3
 
     virtual void
     CalcNextSegment(uint32_t currRate, uint32_t & nextRate, Time & delay, 
-      Time m_segmentFetchTime, int id, Time currDt,uint32_t m_segmentId);
-
-
-	/*
-    virtual void
-    StartApplication(void);    // Called at time specified by Start
-    virtual void
-    StopApplication(void);     // Called at time specified by Stop
-	*/
+      Time m_segmentFetchTime, int id, Time currDt);
 
   private:
     bool
     BufferInc();
-
-	double RESEVOIR = 7.0;
-	double CUSHION = 21.0;
-	int bitRate[6]={300000,750000,1200000,1850000,2850000,4300000};
-	int fetchIndex=0;
-	double rebufPenalty=4.3;
-	double smoothPenalty=1.0;
-	double lastbuffer=4.0;
-	double lastRate=300000;
 
   };
 

@@ -78,7 +78,6 @@ def main():
     rebuf_file = open(DATA_PATH + '/rebufftime0')
     video_chunk_size_file = open(DATA_PATH + '/chunk_size0')
     video_chunk_remain_file = open(DATA_PATH + '/m_segmentleft0')
-    time_file = open(DATA_PATH + '/time0')
 
     while True:  # serve video forever
         # the action is from the last decision
@@ -104,7 +103,6 @@ def main():
                 next_video_chunk_sizes = np.multiply(VIDEO_BIT_RATE, 500)
                 
                 video_chunk_remain = float(video_chunk_remain_file.readline().split('\n')[0])
-                currTime = time_file.readline().split('\n')[0]
                 
                 if video_chunk_remain == 0:
                     end_of_video = 1
@@ -115,16 +113,10 @@ def main():
                 time_stamp += sleep_time  # in ms
 
                 # reward is video quality - rebuffer penalty
-                #reward = VIDEO_BIT_RATE[bit_rate] / M_IN_K \
-                #         - REBUF_PENALTY * rebuf \
-                #         - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[bit_rate] -
-                #                                   VIDEO_BIT_RATE[last_bit_rate]) / M_IN_K
-                # reward is video quality - rebuffer penalty
                 reward = VIDEO_BIT_RATE[bit_rate] / M_IN_K \
                          - REBUF_PENALTY * rebuf \
                          - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[bit_rate] -
                                                    VIDEO_BIT_RATE[last_bit_rate]) / M_IN_K
-
 
                 # log scale reward
                 # log_bit_rate = np.log(VIDEO_BIT_RATE[bit_rate] / float(VIDEO_BIT_RATE[0]))
@@ -143,16 +135,7 @@ def main():
                 last_bit_rate = bit_rate
 
                 # log time_stamp, bit_rate, buffer_size, reward
-                #user currtime
-                #log_file.write(str(time_stamp / M_IN_K) + '\t' +
-                #               str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
-                #               str(buffer_size) + '\t' +
-                #               str(rebuf) + '\t' +
-                #               str(video_chunk_size) + '\t' +
-                #               str(delay) + '\t' +
-                #               str(reward) + '\n')
-                #log_file.flush()
-                log_file.write(str(currTime) + '\t' +
+                log_file.write(str(time_stamp / M_IN_K) + '\t' +
                                str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
                                str(buffer_size) + '\t' +
                                str(rebuf) + '\t' +
@@ -160,8 +143,6 @@ def main():
                                str(delay) + '\t' +
                                str(reward) + '\n')
                 log_file.flush()
-
-
 
                 # retrieve previous state
                 if len(s_batch) == 0:

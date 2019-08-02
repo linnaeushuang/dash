@@ -20,10 +20,8 @@ RANDOM_SEED = 42
 RAND_RANGE = 1000000
 # total buffer is 35(sec)
 #RESEVOIR and CUSHION will be changed to .4total~.6total ?
-#RESEVOIR = 5  # BB
-#CUSHION = 10  # BB
-RESEVOIR = 7
-CUSHION = 21
+RESEVOIR = 5  # BB
+CUSHION = 10  # BB
 SUMMARY_DIR = './results'
 LOG_FILE = './results/log_bb'
 # log in format of time_stamp bit_rate buffer_size rebuffer_time chunk_size download_time reward
@@ -58,7 +56,6 @@ def main():
     rebuf_file = open(DATA_PATH + '/rebufftime0')
     video_chunk_size_file = open(DATA_PATH + '/chunk_size0')
     video_chunk_remain_file = open(DATA_PATH + '/m_segmentleft0')
-    time_file = open(DATA_PATH + '/time0')
 
     while True:  # serve video forever
         # the action is from the last decision
@@ -84,9 +81,6 @@ def main():
                 next_video_chunk_sizes = np.multiply(VIDEO_BIT_RATE, 500)
                 
                 video_chunk_remain = float(video_chunk_remain_file.readline().split('\n')[0])
-
-                currTime = time_file.readline().split('\n')[0]
-
                 
                 if video_chunk_remain == 0:
                     end_of_video = 1
@@ -118,7 +112,8 @@ def main():
 
                 last_bit_rate = bit_rate
 
-                log_file.write(str(currTime) + '\t' +
+                # log time_stamp, bit_rate, buffer_size, reward
+                log_file.write(str(time_stamp / M_IN_K) + '\t' +
                                str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
                                str(buffer_size) + '\t' +
                                str(rebuf) + '\t' +
@@ -126,17 +121,6 @@ def main():
                                str(delay) + '\t' +
                                str(reward) + '\n')
                 log_file.flush()
-                # log time_stamp, bit_rate, buffer_size, reward
-                #user currtime
-                #log_file.write(str(time_stamp / M_IN_K) + '\t' +
-                #               str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
-                #               str(buffer_size) + '\t' +
-                #               str(rebuf) + '\t' +
-                #               str(video_chunk_size) + '\t' +
-                #               str(delay) + '\t' +
-                #               str(reward) + '\n')
-                #log_file.flush()
-
 
                 if buffer_size < RESEVOIR:
                     bit_rate = 0

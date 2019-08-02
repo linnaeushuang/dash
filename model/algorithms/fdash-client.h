@@ -24,7 +24,7 @@ namespace ns3
     ~FdashClient();
 
     virtual void
-    CalcNextSegment(uint32_t currRate, uint32_t & nextRate, Time & delay, Time m_segmentFetchTime,int id, Time currDt, uint32_t m_segmentId);
+    CalcNextSegment(uint32_t currRate, uint32_t & nextRate, Time & delay);
 
   private:
     bool

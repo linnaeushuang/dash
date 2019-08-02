@@ -39,21 +39,11 @@ namespace ns3
 
   void
   PensieveClient::CalcNextSegment(uint32_t currRate, uint32_t & nextRate,
-      Time & delay, Time m_segmentFetchTime, int id, Time currDt,uint32_t m_segmentId)
+      Time & delay, Time m_segmentFetchTime, int id, Time currDt)
   {
 
-    double rebufftime = std::max(m_segmentFetchTime.GetSeconds() - lastbuffer, 0.0);
-	//double rebufftime = std::max(m_segmentFetchTime.GetSeconds() - currDt.GetSeconds(), 0.0);
-	//double rebufftime = m_segmentFetchTime.GetSeconds() - currDt.GetSeconds();
-
+    double rebufftime = std::max(m_segmentFetchTime.GetSeconds() - 4.0, 0.0);
     //double currDt = GetBufferEstimate();//bufferlevel is estimated
-	//
-	
-	lastbuffer=currDt.GetSeconds();
-
-	m_segmentId_output<<m_segmentId<<std::endl;
-
-
     std::ifstream predict_input;
     std::ifstream contiornot;
     char flag[4];
@@ -62,9 +52,7 @@ namespace ns3
     lastdownloadtime<<m_segmentFetchTime.GetSeconds()<<std::endl;
     currRate_output<<currRate<<std::endl;
     chunk_size<<currRate/8*4<<std::endl;
-	time_output<<Simulator::Now().GetSeconds()<<std::endl;
     
-
     permission.open("./src/dash/model/algorithms/data/permission"+std::to_string(id));
     permission<<1;
     permission.close();

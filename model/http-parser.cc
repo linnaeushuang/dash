@@ -64,8 +64,6 @@ namespace ns3
     uint32_t headersize = mpeg_header.GetSerializedSize()
         + http_header.GetSerializedSize();
 
-	//std::cout<<Simulator::Now().GetSeconds()<<" int http-parser ip:"<<InetSocketAddress::ConvertFrom(from).GetIpv4()<<" port:"<<InetSocketAddress::ConvertFrom(from).GetPort()<<std::endl;
-
     if (bytes > 0)
       {
         m_bytes += bytes;
@@ -76,11 +74,6 @@ namespace ns3
                 Simulator::Now().GetSeconds() << " bytes: " << bytes << " dt: " << (Simulator::Now() - m_lastmeasurement).GetSeconds() << " bitrate: " << (8 * (bytes + headersize)/ (Simulator::Now() - m_lastmeasurement).GetSeconds()));
           }
         m_lastmeasurement = Simulator::Now();
-
-		//test tcp ip and port
-		//std::cout<<Simulator::Now().GetSeconds()<<" in http-parser recv data(byte):"<<bytes<<" from ip:"<<InetSocketAddress::ConvertFrom(from).GetIpv4()<<" port:"<<InetSocketAddress::ConvertFrom(from).GetPort()<<std::endl;
-
-
       }
 
     NS_LOG_INFO(
@@ -106,7 +99,6 @@ namespace ns3
     m_bytes -= message_size;
 
     m_app->MessageReceived(message);
-
 
     ReadSocket(socket);
   }

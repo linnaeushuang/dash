@@ -52,8 +52,6 @@ namespace ns3
   Time
   MpegPlayer::GetRealPlayTime(Time playTime)
   {
-
-	  //std::cout<<"call in in "<<playTime.GetSeconds()<<std::endl;
     NS_LOG_INFO(
         " Start: " << m_start_time.GetSeconds() << " Inter: " << m_interruption_time.GetSeconds() << " playtime: " << playTime.GetSeconds() << " now: " << Simulator::Now().GetSeconds() << " actual: " << (m_start_time + m_interruption_time + playTime).GetSeconds());
 
@@ -101,10 +99,8 @@ namespace ns3
   MpegPlayer::PlayFrame(void)
   {
     NS_LOG_FUNCTION(this);
-//	std::cout<<Simulator::Now().GetSeconds()<<" "<<m_queue.size()<<std::endl;
     if (m_state == MPEG_PLAYER_DONE)
       {
-		  //std::cout<<"player done:"<<Simulator::Now().GetSeconds()<<std::endl;
         return;
       }
     if (m_queue.empty())
@@ -137,7 +133,6 @@ namespace ns3
      << m_totalRate << " played=" << m_framesPlayed << std::endl;*/
 
     Time b_t = GetRealPlayTime(mpeg_header.GetPlaybackTime());
-	//std::cout<<"call in PlayFrame"<<b_t.GetSeconds()<<std::endl;
 
     if (m_bufferDelay > Time("0s") && b_t < m_bufferDelay && m_dashClient)
       {
@@ -149,14 +144,12 @@ namespace ns3
     NS_LOG_INFO(
         Simulator::Now().GetSeconds() << " PLAYING FRAME: " << " VidId: " << http_header.GetVideoId() << " SegId: " << http_header.GetSegmentId() << " Res: " << http_header.GetResolution() << " FrameId: " << mpeg_header.GetFrameId() << " PlayTime: " << mpeg_header.GetPlaybackTime().GetSeconds() << " Type: " << (char) mpeg_header.GetType() << " interTime: " << m_interruption_time.GetSeconds() << " queueLength: " << m_queue.size());
 
-	/*
-       std::cout << " frId: " << mpeg_header.GetFrameId()
+    /*   std::cout << " frId: " << mpeg_header.GetFrameId()
      << " playtime: " << mpeg_header.GetPlaybackTime()
      << " target: " << (m_start_time + m_interruption_time + mpeg_header.GetPlaybackTime()).GetSeconds()
      << " now: " << Simulator::Now().GetSeconds()
      << std::endl;
-	 */
-	//std::cout<<" buffer level:"<<GetRealPlayTime(mpeg_header.GetPlaybackTime()).GetSeconds()<<std::endl;
+     */
     Simulator::Schedule(MilliSeconds(20), &MpegPlayer::PlayFrame, this);
 
   }

@@ -3,7 +3,7 @@ os.environ['CUDA_VISIBLE_DEVICES']=''
 import numpy as np
 import tensorflow as tf
 import a3c
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 S_INFO = 6  # bit_rate, buffer_size, next_chunk_size, bandwidth_measurement(throughput and time), chunk_til_video_end
@@ -81,7 +81,6 @@ def main():
         rebuf_file = open(DATA_PATH + '/rebufftime0')
         video_chunk_size_file = open(DATA_PATH + '/chunk_size0')
         video_chunk_remain_file = open(DATA_PATH + '/m_segmentleft0')
-        time_file = open(DATA_PATH + '/time0')
         
         while True:  # serve video forever
             # the action is from the last decision
@@ -108,7 +107,6 @@ def main():
                     next_video_chunk_sizes = np.multiply(VIDEO_BIT_RATE, 500)
                     
                     video_chunk_remain = float(video_chunk_remain_file.readline().split('\n')[0])
-                    currTime = time_file.readline().split('\n')[0]
                     
                     if video_chunk_remain == 0:
                         end_of_video = 1
@@ -129,24 +127,15 @@ def main():
                     last_bit_rate = bit_rate
 
                     # log time_stamp, bit_rate, buffer_size, reward
-                    #log_file.write(str(time_stamp / M_IN_K) + '\t' +
-                    #               str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
-                    #               str(buffer_size) + '\t' +
-                    #               str(rebuf) + '\t' +
-                    #               str(video_chunk_size) + '\t' +
-                    #               str(delay) + '\t' +
-                    #               str(reward) + '\n')
-                    #log_file.flush()
-
-                    # log time_stamp, bit_rate, buffer_size, reward
-                    log_file.write(str(currTime) + '\t' +
-                                    str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
-                                    str(buffer_size) + '\t' +
-                                    str(rebuf) + '\t' +
-                                    str(video_chunk_size) + '\t' +
-                                    str(delay) + '\t' +
-                                    str(reward) + '\n')
+                    log_file.write(str(time_stamp / M_IN_K) + '\t' +
+                                   str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
+                                   str(buffer_size) + '\t' +
+                                   str(rebuf) + '\t' +
+                                   str(video_chunk_size) + '\t' +
+                                   str(delay) + '\t' +
+                                   str(reward) + '\n')
                     log_file.flush()
+
                     # retrieve previous state
                     if len(s_batch) == 0:
                         state = [np.zeros((S_INFO, S_LEN))]
