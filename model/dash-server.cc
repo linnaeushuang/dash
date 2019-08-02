@@ -96,6 +96,35 @@ namespace ns3
     Application::DoDispose();
   }
 
+
+  //test cwnd
+
+  void
+  DashServer::CwndChange(uint32_t video_id,uint32_t oldCwnd,uint32_t newCwnd){
+	  /*
+	Address paddr;
+	socket->GetPeerName(paddr);
+	InetSocketAddress ipaddr=InetSocketAddress::ConvertFrom(paddr);
+	*/
+
+	  //Ptr<Socket> curNode=this->GetNode();
+	  //std::cout<<curNode->m_nodeid<<" "<<newCwnd<<std::endl;
+	 //std::cout<<Simulator::Now().GetSeconds()<<" send to ip: "<<ipaddr.GetIpv4()<<" port:"<<ipaddr.GetPort()<<" oldcwnd:"<<oldCwnd<<" newcwnd:"<<newCwnd<<std::endl;
+	//std::cout<<Simulator::Now().GetSeconds()<<" oldcwnd:"<<oldCwnd<<" newcwnd:"<<newCwnd<<socket<<std::endl;
+	
+	 //std::cout<<Simulator::Now().GetSeconds()<<" id:"<<video_id<<" cwnd:"<<newCwnd<<std::endl;
+	  //std::cout<<Simulator::Now().GetSeconds()<<" "<<video_id<<" "<<newCwnd<<std::endl;
+
+
+
+	//static function cannot use outputlist
+	//outputList[video_id]<<Simulator::Now().GetSeconds()<<" "<<newCwnd<<std::endl;
+
+
+  }
+
+
+
 // Application Methods
   void
   DashServer::StartApplication()    // Called at time specified by Start
@@ -131,6 +160,10 @@ namespace ns3
     m_socket->SetCloseCallbacks(
         MakeCallback(&DashServer::HandlePeerClose, this),
         MakeCallback(&DashServer::HandlePeerError, this));
+
+	//test cwnd
+	//m_socket->TraceConnectWithoutContext("CongestionWindow",MakeBoundCallback(&DashServer::CwndChange,m_socket));
+	//std::cout<<"test server start"<<std::endl;
   }
 
   void
@@ -167,6 +200,12 @@ namespace ns3
         HTTPHeader header;
         packet->RemoveHeader(header);
 
+
+
+		//socket->TraceConnectWithoutContext("CongestionWindow",MakeCallback(&DashServer::CwndChange,this));
+
+
+
         SendSegment(header.GetVideoId(), header.GetResolution(),
             header.GetSegmentId(), socket);
 
@@ -174,7 +213,13 @@ namespace ns3
           {
             NS_LOG_INFO(
                 "At time " << Simulator::Now ().GetSeconds () << "s packet sink received " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom(from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort () << " total Rx " << m_totalRx << " bytes");
-          }
+
+			//test send to client ip and port
+			//always 10.1.1.2  port:80
+
+		//	std::cout<<"At time " << Simulator::Now ().GetSeconds () << "s packet sink received " << packet->GetSize () << " bytes from " << InetSocketAddress::ConvertFrom(from).GetIpv4 () << " port " << InetSocketAddress::ConvertFrom (from).GetPort () << " total Rx " << m_totalRx << " bytes "<<socket<<std::endl;
+		  }
+
         else if (Inet6SocketAddress::IsMatchingType(from))
           {
             NS_LOG_INFO(
@@ -200,9 +245,19 @@ namespace ns3
   DashServer::HandleAccept(Ptr<Socket> s, const Address& from)
   {
     NS_LOG_FUNCTION(this << s << from);
+	//std::cout<<"test accept:"<<this<<" "<<s<<" "<<from<<std::endl;
     s->SetRecvCallback(MakeCallback(&DashServer::HandleRead, this));
     s->SetSendCallback(MakeCallback(&DashServer::DataSend, this));
     m_socketList.push_back(s);
+
+	//std::fstream out("./src/dash/model/algorithms/data/cwndMonitor"+std::to_string(video_id));
+	//outputList.push_back(out);
+
+	//test
+	//std::cout<<"test socket accept:"<<m_socketList.size()<<std::endl;
+
+	//test callback
+	s->TraceConnectWithoutContext("CongestionWindow",MakeBoundCallback(&DashServer::CwndChange,videoIndex++));
 
   }
 
@@ -245,7 +300,16 @@ namespace ns3
       }
 
     NS_LOG_INFO("DATA WAS JUST SENT!!!");
-
+	/*
+	double t=Simulator::Now().GetSeconds();
+	if(t>=(Servertime-0.2)&&t<=Servertime+0.2){
+		//socket->TraceConnectWithoutContext("CongestionWindow",MakeCallback(&DashServer::CwndChange,this));
+		Address addr;
+		socket->GetSockName(addr);
+		InetSocketAddress iaddr=InetSocketAddress::ConvertFrom(addr);
+		std::cout<<t<<" :"<<iaddr.GetPort()<<std::endl;
+		}
+		*/
   }
 
   void
@@ -294,6 +358,24 @@ namespace ns3
         m_queues[socket].push(*frame);
       }
     DataSend(socket, 0);
+	/*
+
+
+
+	double t=Simulator::Now().GetSeconds();
+	//socket->TraceConnectWithoutContext("CongestionWindow",MakeCallback(&DashServer::CwndChange,this));
+	//socket->TraceConnectWithoutContext("CongestionWindow",MakeBoundCallback(&DashServer::CwndChange,video_id));
+	//
+	//
+	//test cwnd
+	Address addr,paddr;
+	socket->GetSockName(addr);
+	socket->GetPeerName(paddr);
+	InetSocketAddress ipaddr=InetSocketAddress::ConvertFrom(paddr);
+	InetSocketAddress iaddr=InetSocketAddress::ConvertFrom(addr);
+	std::cout<<t<<" socket:"<<socket<<" ip:"<<iaddr.GetIpv4()<<" port:"<<iaddr.GetPort()<<" send video_id:"<<video_id<<" to ip:"<<ipaddr.GetIpv4()<<" port:"<<ipaddr.GetPort()<<std::endl;
+	*/
+
   }
 
 } // Namespace ns3

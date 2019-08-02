@@ -27,7 +27,9 @@
 #include "http-header.h"
 #include "dash-client.h"
 
+
 NS_LOG_COMPONENT_DEFINE("DashClient");
+
 
 namespace ns3
 {
@@ -44,7 +46,10 @@ namespace ns3
             DashClient>().AddAttribute("VideoId",
             "The Id of the video that is played.", UintegerValue(0),
             MakeUintegerAccessor(&DashClient::m_videoId),
-            MakeUintegerChecker<uint32_t>(1)).AddAttribute("Remote",
+            MakeUintegerChecker<uint32_t>(1)).AddAttribute("NumberChunk",
+			"The number of chunks in the video",UintegerValue(0),
+			MakeUintegerAccessor(&DashClient::m_numChunk),
+			MakeUintegerChecker<uint32_t>(1)).AddAttribute("Remote",
             "The address of the destination", AddressValue(),
             MakeAddressAccessor(&DashClient::m_peer), MakeAddressChecker()).AddAttribute(
             "Protocol", "The type of TCP protocol to use.",
@@ -57,16 +62,18 @@ namespace ns3
             MakeTimeChecker()
 
             ).AddTraceSource("Tx", "A new packet is created and is sent",
-            MakeTraceSourceAccessor(&DashClient::m_txTrace), "ns3::Packet::TracedCallback");
+            MakeTraceSourceAccessor(&DashClient::m_txTrace),"ns3::Packet::TracedCallback");
     return tid;
   }
 
+  //fix m_bitRate's initial value to 300Kbps
+  //because of pensieve
   DashClient::DashClient() :
       m_rateChanges(0), m_target_dt("35s"), m_bitrateEstimate(0.0), m_segmentId(
           0), m_socket(0), m_connected(false), m_totBytes(0), m_startedReceiving(
           Seconds(0)), m_sumDt(Seconds(0)), m_lastDt(Seconds(-1)), m_id(
           m_countObjs++), m_requestTime("0s"), m_segment_bytes(0), m_bitRate(
-          45000), m_window(Seconds(10)), m_segmentFetchTime(Seconds(0))
+          300000), m_window(Seconds(10)), m_segmentFetchTime(Seconds(0))
   {
     NS_LOG_FUNCTION(this);
     m_parser.SetApp(this); // So the parser knows where to send the received messages
@@ -94,18 +101,52 @@ namespace ns3
     Application::DoDispose();
   }
 
+
+
+
+  void DashClient::setSupplement(double	 time, double buffer){
+	  //s_real_buffer_output<<time<<" "<<std::max(buffer,0.0)<<std::endl;
+	  //s_real_buffer_output<<time<<" "<<buffer<<std::endl;
+	  s_real_buffer_output<<time<<" "<<buffer*0.02<<std::endl;
+  }
+
+  
+  void DashClient::tcpMonitor(){
+	  std::cout<<"node:"<<m_id<<" m_segmentId:"<<m_segmentId<<" test ouputtime:"<<Simulator::Now().GetSeconds()<<std::endl;
+  }
+
+
+
+
 // Application Methods
   void
   DashClient::StartApplication(void) // Called at time specified by Start
   {
     NS_LOG_FUNCTION(this);
+	tcp_output.open("./src/dash/model/algorithms/data/tcpMonitor"+std::to_string(m_id));
+
+	buffer_output.open("./src/dash/model/algorithms/data/buffer"+std::to_string(m_id));
+	lastdownloadtime.open("./src/dash/model/algorithms/data/lastdownloadtime"+std::to_string(m_id));
+	rebufftime_output.open("./src/dash/model/algorithms/data/rebufftime"+std::to_string(m_id));
+	currRate_output.open("./src/dash/model/algorithms/data/currRate"+std::to_string(m_id));
+	chunk_size.open("./src/dash/model/algorithms/data/chunk_size"+std::to_string(m_id));
+	m_segmentId_output.open("./src/dash/model/algorithms/data/m_segmentleft"+std::to_string(m_id));
+	time_output.open("./src/dash/model/algorithms/data/time"+std::to_string(m_id));
+	//for(double setTime=1.0;setTime<512;setTime+=1.0)
+	//	Simulator::Schedule(Seconds(setTime),tcpMonitor,setTime);
+
+	permission.open("./src/dash/model/algorithms/data/permission"+std::to_string(m_id));
+	permission<<"10"<<std::endl;
+	permission.close();
+    
 
     // Create the socket if not already
-
-    NS_LOG_INFO("trying to create connection");
+	
+	//start 5 times
+	//std::cout<<"test client start"<<std::endl;
     if (!m_socket)
       {
-        NS_LOG_INFO("Just created connection");
+
         m_socket = Socket::CreateSocket(GetNode(), m_tid);
 
         // Fatal error if socket type is not NS3_SOCK_STREAM or NS3_SOCK_SEQPACKET
@@ -133,13 +174,30 @@ namespace ns3
             MakeCallback(&DashClient::ConnectionFailed, this));
         m_socket->SetSendCallback(MakeCallback(&DashClient::DataSend, this));
       }
-    NS_LOG_INFO("Just started connection");
   }
 
   void
   DashClient::StopApplication(void) // Called at time specified by Stop
   {
     NS_LOG_FUNCTION(this);
+
+
+	buffer_output.close();
+	lastdownloadtime.close();
+	rebufftime_output.close();
+	currRate_output.close();
+	chunk_size.close();
+	m_segmentId_output.close();
+	time_output.close();
+
+	log_output.close();
+
+
+    
+	s_real_buffer_output<<s_lastTime + s_lastBuffer*0.02<<" "<<0.0<<std::endl;
+	s_real_buffer_output.close();
+
+	tcp_output.close();
 
     if (m_socket != 0)
       {
@@ -164,6 +222,14 @@ namespace ns3
       {
         return;
       }
+
+	//after download 48 chunk,stop
+	//if (m_segmentId>=48)
+	//	return;
+	
+
+	if (m_segmentId>=m_numChunk)
+		return;
 
     Ptr<Packet> packet = Create<Packet>(100);
 
@@ -232,6 +298,23 @@ namespace ns3
   void
   DashClient::MessageReceived(Packet message)
   {
+	  //tcp monitor can open if need
+	  if(Simulator::Now().GetSeconds()<m_tcpMonitorTime){
+		  m_tcpPackageBytes+=message.GetSize();
+	  }
+	  else{
+		  tcp_output<<m_tcpMonitorTime<<" "<<m_tcpPackageBytes<<std::endl;
+		  m_tcpPackageBytes=0;
+		  m_tcpPackageBytes+=message.GetSize();
+		  m_tcpMonitorTime+=1;
+	  }
+
+
+	//std::cout<<"test call node:"<<m_id<<std::endl;
+	//call in hettpparser.cc  readsocket()
+	//
+	//
+	//
     NS_LOG_FUNCTION(this << message);
 
     MPEGHeader mpegHeader;
@@ -251,6 +334,7 @@ namespace ns3
     case MPEG_PLAYER_PLAYING:
       m_sumDt += m_player.GetRealPlayTime(mpegHeader.GetPlaybackTime());
       break;
+
     case MPEG_PLAYER_PAUSED:
       break;
     case MPEG_PLAYER_DONE:
@@ -276,25 +360,49 @@ namespace ns3
         LogBufferLevel(currDt);
 
         uint32_t old = m_bitRate;
-        //  double diff = m_lastDt >= 0 ? (currDt - m_lastDt).GetSeconds() : 0;
 
         Time bufferDelay;
 
-        //m_player.CalcNextSegment(m_bitRate, m_player.GetBufferEstimate(), diff,
-        //m_bitRate, bufferDelay);
 
         uint32_t prevBitrate = m_bitRate;
 
-        CalcNextSegment(prevBitrate, m_bitRate, bufferDelay);
+        if (m_segmentId > m_totalsegment)
+        {
+			//fix here to 64
+          m_totalsegment += 216;
+        }
+        m_segmentLeft = m_totalsegment - m_segmentId;
+       // m_segmentId_output<<m_segmentLeft<<std::endl;
+        
+
+        //CalcNextSegment(prevBitrate, m_bitRate, bufferDelay, m_segmentFetchTime, m_id, currDt);
+		//
+		//use player queue denote buffer level
+		CalcNextSegment(prevBitrate,m_bitRate,bufferDelay,m_segmentFetchTime,m_id,Seconds(m_player.GetQueueSize()*0.02),m_segmentLeft);
+        
 
         if (prevBitrate != m_bitRate)
           {
             m_rateChanges++;
           }
 
-        if (bufferDelay == Seconds(0))
+		//here can set the total buffer size
+		if (bufferDelay == Seconds(0))
+		//but if set here only when buffer over 30sec it will stop
+        //if (bufferDelay == Seconds(0) && currDt <= Seconds(13))
           {
             RequestSegment();
+
+			//this call is ok ,it will call in (time of  MessageReceived() called + 5s)
+			//Simulator::Schedule(Seconds(5),&DashClient::tcpMonitor,this);
+			/*
+			if(m_id==2&&m_segmentId==33)
+				Simulator::Schedule(Seconds(50),&DashClient::RequestSegment,this);
+			else if(m_id==1&&m_segmentId==88)
+				Simulator::Schedule(Seconds(50),&DashClient::RequestSegment,this);
+			else
+				RequestSegment();
+				*/
           }
         else
           {
@@ -319,12 +427,19 @@ namespace ns3
         m_lastDt = currDt;
 
       }
-
+	//real buffer can open if need
+	/*
+	if(s_real_buffer_output.is_open()){
+		s_lastTime=Simulator::Now().GetSeconds();
+		s_lastBuffer=m_player.GetQueueSize();
+		setSupplement(s_lastTime,s_lastBuffer);
+	}
+	*/
   }
 
   void
   DashClient::CalcNextSegment(uint32_t currRate, uint32_t & nextRate,
-      Time & delay)
+      Time & delay,Time m_segmentFetchTime, int id, Time currDt,uint32_t m_segmentId)
   {
     nextRate = currRate;
     delay = Seconds(0);

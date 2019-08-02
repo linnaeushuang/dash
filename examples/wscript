@@ -7,7 +7,11 @@ def build(bld):
     obj.source = 'link-example.cc'
     obj = bld.create_ns3_program('dash-wifi', ['dash'])
     obj.source = 'dash-wifi.cc'
-    obj = bld.create_ns3_program('lena-dash', ['dash'])
-    obj.source = 'lena-dash.cc'
+    obj = bld.create_ns3_program('my-program', ['dash'])
+    obj.source = 'my_program.cc'
+    obj = bld.create_ns3_program('dash-star', ['dash'])
+    obj.source = 'dash-star.cc'
+    obj = bld.create_ns3_program('dash-example-star', ['dash'])
+    obj.source = 'dash-example-star.cc'
     
 

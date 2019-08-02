@@ -1,6 +1,10 @@
 dash
 ========
 
+This program is my backelor's degree program based on djvergad/dash.
+
+Multi-DASH streaming behavior analysis and optimization beased on Reinforcement Learning.
+
 An MPEG/DASH client-server [ns3](https://www.nsnam.org/) module for simulating rate adaptation algorithms over HTTP/TCP.
 
 This module was built for generating the simulation results in the following papers:
@@ -17,7 +21,9 @@ The DASH rate adaptation algorithms that are implemented are the following:
   - **SVAA**, presented in: G. Tian and Y. Liu, “Towards agile and smooth video adaptation in dynamic HTTP streaming,” in Proc. 8th Int. CoNEXT, New York, NY, USA, 2012, pp. 109–120. [Online].
   - **RAAHS**, presented in: C. Liu, I. Bouazizi, and M. Gabbouj, “Rate adaptation for adaptive HTTP streaming,” in Proc. 2nd Annu. ACM Conf. MMSys, New York, NY, USA, 2011, pp. 169–174. [Online].
   - **SFTM**, presented in: C. Liu, I. Bouazizi, M. M. Hannuksela, and M. Gabbouj, “Rate adaptation for dynamic adaptive streaming over HTTP in content distribution network,” Signal Process., Image Commun., vol. 27, no. 4, pp. 288–311, Apr. 2012.
-
+  - **MPC**, presented in: X. Yin, A. Jindal, V. Sekar, and B. Sinopoli. 2015. A Control-Theoretic Approach for Dynamic Adaptive Video Streaming over HTTP. In SIGCOMM. ACM.
+  -****** **BB**, presented in: T.Y. Huang et al. 2014. A Buffer-based Approach to Rate Adaptation: Evidence from a Large Video Streaming Service. In SIGCOMM. ACM.
+  -****** **pensieve**, presented in: H.Z. Mao et al. 2017. Neural Adaptive Video Streaming with Pensieve. In SIGCOMM. ACM.
 Installation instructions
 ----
 

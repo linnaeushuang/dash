@@ -38,7 +38,7 @@ namespace ns3
 
   void
   OsmpClient::CalcNextSegment(uint32_t currRate, uint32_t & nextRate,
-      Time & delay)
+      Time & delay,Time m_segmentFetchTime,int id,Time currDt)
   {
     uint32_t rates[] =
       { 45000, 89000, 131000, 178000, 221000, 263000, 334000, 396000, 522000,
