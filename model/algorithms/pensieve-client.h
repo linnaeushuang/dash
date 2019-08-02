@@ -25,7 +25,7 @@ namespace ns3
 
     virtual void
     CalcNextSegment(uint32_t currRate, uint32_t & nextRate, Time & delay, 
-      Time m_segmentFetchTime, int id, Time currDt);
+      Time m_segmentFetchTime, int id, Time currDt,uint32_t m_segmentId);
 
   private:
     bool

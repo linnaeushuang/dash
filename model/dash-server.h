@@ -29,6 +29,12 @@
 #include <map>
 #include <queue>
 
+/*
+#include <vector>
+#include <string>
+#include <fstream>
+*/
+
 namespace ns3
 {
 
@@ -100,6 +106,17 @@ namespace ns3
     // listening socket is stored seperately from the accepted sockets
     Ptr<Socket> m_socket;       // Listening socket
     std::list<Ptr<Socket> > m_socketList; //the accepted sockets
+
+
+	static void
+	CwndChange(uint32_t video_id,uint32_t oldCwnd,uint32_t newCwnd);
+
+	//double Servertime=1.
+	uint32_t videoIndex=0;
+	//std::vector<std::ofstream> outputList;
+
+
+	
 
     Address m_local;        // Local address to bind to
     uint32_t m_totalRx;      // Total bytes received

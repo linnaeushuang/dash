@@ -33,9 +33,43 @@
 #include "ns3/network-module.h"
 #include "ns3/dash-module.h"
 
+#include "../model/algorithms/dash-param.h"
+
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("DashExample");
+
+
+
+void BandwidthTrace(float inputBW,uint32_t usersNum){
+	//-------------------------------------------------
+	//input unit is Mbps
+	//I want to user int bandwidth in Kbps;
+	//give every user same bandwidth
+	//for example,3 user 0.8Mbps BW
+	//I will give 3*800Kbps BW
+	//-------------------------------------------------
+	
+
+	std::string bandUnit="Kbps";
+	inputBW=inputBW*1000*usersNum;
+
+	//need to support c++11 standard
+	std::string  bandwidth = std::to_string((int)inputBW)+bandUnit;
+	//fortunatly
+
+
+
+	Config::Set("/NodeList/1/DeviceList/0/$ns3::PointToPointNetDevice/DataRate",StringValue(bandwidth));
+
+
+
+	//change the client port bandwidth,but it is not work
+	Config::Set("/NodeList/0/DeviceList/0/$ns3::PointToPointNetDevice/DataRate",StringValue(bandwidth));
+	//only change the server port bandwidth.it will work
+	//server is in the 1th node,client is in 0th node
+	//Config::Set("/NodeList/1/DeviceList/0/$ns3::PointToPointNetDevice/DataRate",StringValue("100Kbps"));
+}
 
 int
 main(int argc, char *argv[])
@@ -44,11 +78,24 @@ main(int argc, char *argv[])
   uint32_t maxBytes = 100;
   uint32_t users = 1;
   double target_dt = 35.0;
-  double stopTime = 100.0;
+
+
+  double stopTime = 1024.0;
+  double startTime = 0.0;
+
+  uint32_t seed=1;
+  std::string traceName = "None";
+
+
   std::string linkRate = "500Kbps";
   std::string delay = "5ms";
   std::string protocol = "ns3::DashClient";
   std::string window = "10s";
+
+  uint32_t numChunk=48;
+
+
+  double intervalStep=0.0;
 
   /*  LogComponentEnable("MpegPlayer", LOG_LEVEL_ALL);*/
   /*LogComponentEnable ("DashServer", LOG_LEVEL_ALL);
@@ -79,7 +126,22 @@ main(int argc, char *argv[])
       protocol);
   cmd.AddValue("window",
       "The window for measuring the average throughput (Time).", window);
+
+  cmd.AddValue("intervalStep",
+	  "The step of interval for each user",intervalStep);
+  cmd.AddValue("traceName",
+	  "The trace file name,it will load until the stopTime",traceName);
+  cmd.AddValue("randomSeed",
+	  "The seed of global random",seed);
+  cmd.AddValue("startTime",
+	  "The time of client start",startTime);
+  cmd.AddValue("numChunk",
+	  "The number of chunk in video",numChunk);
+
+
   cmd.Parse(argc, argv);
+
+  RngSeedManager::SetSeed(seed);
 
 //
 // Explicitly create the nodes required by the topology (shown above).
@@ -128,7 +190,84 @@ main(int argc, char *argv[])
   std::vector<DashClientHelper> clients;
   std::vector<ApplicationContainer> clientApps;
 
-  for (uint32_t user = 0; user < users; user++)
+  //---------------------------------set the dynamic bandwidth----------------------------------------------------------
+  //
+  //user traceName to set the location where the trace read from
+  //
+  //also,it will read the trace until the trace time greater then stop time
+  //
+  //Author:huang lin <oliverHLin@163.com>
+  //sent email if any problem
+  //
+  //--------------------------------------------------------------------------------------------------------------------
+  
+
+  USERS_BB=users;
+  USERS_MPC=users;
+  USERS_MPCFAST=users;
+  
+  if(traceName!="None"){
+    TRACE_NAME_BB=traceName;
+    TRACE_NAME_MPC=traceName;
+    TRACE_NAME_MPCFAST=traceName;
+
+  	std::string tracePATH = "./src/dash/model/algorithms/test_sim_traces/";
+  	tracePATH = tracePATH + traceName;
+  	std::ifstream traceFile(tracePATH);
+  	std::string traceTime,traceBandWidth;
+	float timeToSet,bandToSet,cycleTime=0.0;
+	if(traceFile){
+		traceFile >> traceTime;
+		traceFile >> traceBandWidth;
+		do{
+			//atof may need stdlib.h
+			timeToSet=atof(traceTime.c_str());
+			bandToSet=atof(traceBandWidth.c_str());
+			Simulator::Schedule(Seconds(timeToSet+cycleTime),BandwidthTrace,bandToSet,users);
+			traceFile >> traceTime;
+			traceFile >> traceBandWidth;
+			if(traceFile.eof()){
+				cycleTime+=timeToSet;
+				traceFile.clear();
+				traceFile.seekg(0,std::ios::beg);
+				traceFile >> traceTime;
+				traceFile >> traceBandWidth;
+			}
+
+		}while(atof(traceTime.c_str())+cycleTime<stopTime);
+  	}
+	traceFile.close();
+  }
+  else{
+    TRACE_NAME_BB="norway_none";
+    TRACE_NAME_MPC="norway_none";
+    TRACE_NAME_MPCFAST="norway_none";
+
+
+  }
+
+
+  //in 120sec call BandwidthTrace,and use 10 to the function BWT input
+  //Simulator::Schedule(Seconds(120.0),BandwidthTrace,10);
+
+
+
+  //
+  //--------------------setSupplement----
+  
+/*
+  for(double stime=0.5;stime<stopTime;stime+=1){
+	  Simulator::Schedule(Seconds(stime),setSupplement,stime,m_player.GetRealPlayTime(mpegHeader.GetPlaybackTime()));
+  }
+
+*/
+
+
+
+
+  //--------------------------------------------------------------------------------------------------------------------
+  double startInerval=0.0;
+  for (uint32_t user = 0; user < users; user++,startInerval+=intervalStep)
     {
       DashClientHelper client("ns3::TcpSocketFactory",
           InetSocketAddress(i.GetAddress(1), port), protocols[user % protoNum]);
@@ -136,8 +275,9 @@ main(int argc, char *argv[])
       client.SetAttribute("VideoId", UintegerValue(user + 1)); // VideoId should positive
       client.SetAttribute("TargetDt", TimeValue(Seconds(target_dt)));
       client.SetAttribute("window", TimeValue(Time(window)));
+	  client.SetAttribute("NumberChunk",UintegerValue(numChunk));
       ApplicationContainer clientApp = client.Install(nodes.Get(0));
-      clientApp.Start(Seconds(0.25));
+      clientApp.Start(Seconds(startTime+0.25+startInerval));
       clientApp.Stop(Seconds(stopTime));
 
       clients.push_back(client);

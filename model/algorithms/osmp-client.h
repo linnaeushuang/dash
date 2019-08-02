@@ -24,7 +24,7 @@ namespace ns3
     ~OsmpClient();
 
     virtual void
-        CalcNextSegment(uint32_t currRate, uint32_t & nextRate, Time & delay);
+        CalcNextSegment(uint32_t currRate, uint32_t & nextRate, Time & delay,Time m_segmentFetchTime,int id ,Time currDt);
   };
 
 } /* namespace ns3 */

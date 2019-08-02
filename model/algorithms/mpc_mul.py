@@ -28,6 +28,7 @@ BW_EST_FILE = './results/log_mpc_BW'
 
 DATA_PATH = './data'
 
+
 CHUNK_COMBO_OPTIONS = []
 
 # past errors in bandwidth
@@ -80,13 +81,21 @@ def main(m_id):
     rebuf_file = open(DATA_PATH + '/rebufftime' + str(m_id))
     video_chunk_size_file = open(DATA_PATH + '/chunk_size' + str(m_id))
     video_chunk_remain_file = open(DATA_PATH + '/m_segmentleft' + str(m_id))
+    time_file = open(DATA_PATH + '/time' + str(m_id))
 
-    while True:  # serve video forever
+    end_of_video=0
+
+    while end_of_video==0:  # serve video forever
         # the action is from the last decision
         # this is to make the framework similar to the real
+        #
+        #
+        #
+        #use end_of_video,loaddown only 1 video
         with open(DATA_PATH + '/permission' + str(m_id)) as enable:
             key = enable.read()
             if key == '1':
+                #global end_of_video
                 output_file = open(DATA_PATH + '/predict' + str(m_id),'a')
                 file_permission = open(DATA_PATH + '/permission' + str(m_id),'a')
                 
@@ -105,6 +114,11 @@ def main(m_id):
                 next_video_chunk_sizes = np.multiply(VIDEO_BIT_RATE, 500)
                 
                 video_chunk_remain = float(video_chunk_remain_file.readline().split('\n')[0])
+                #a=video_chunk_remain_file.readline().split('\n')[0]
+                #print 'node'+str(m_id)+' :'+a
+                #video_chunk_remain=float(a)
+
+                currTime = time_file.readline().split('\n')[0]
                 
                 if video_chunk_remain == 0:
                     end_of_video = 1
@@ -137,7 +151,16 @@ def main(m_id):
                 last_bit_rate = bit_rate
 
                 # log time_stamp, bit_rate, buffer_size, reward
-                log_file.write(str(time_stamp / M_IN_K) + '\t' +
+                #user currtime
+                #log_file.write(str(time_stamp / M_IN_K) + '\t' +
+                #               str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
+                #               str(buffer_size) + '\t' +
+                #               str(rebuf) + '\t' +
+                #               str(video_chunk_size) + '\t' +
+                #               str(delay) + '\t' +
+                #               str(reward) + '\n')
+                #log_file.flush()
+                log_file.write(str(currTime) + '\t' +
                                str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
                                str(buffer_size) + '\t' +
                                str(rebuf) + '\t' +
@@ -145,6 +168,8 @@ def main(m_id):
                                str(delay) + '\t' +
                                str(reward) + '\n')
                 log_file.flush()
+
+
 
                 # retrieve previous state
                 if len(s_batch) == 0:
@@ -268,8 +293,8 @@ def main(m_id):
                 s_batch.append(state)
 
                 if end_of_video:
-                    log_file.write('\n')
-                    bw_file.write('\n')
+                    #log_file.write('\n')
+                    #bw_file.write('\n')
                     bw_file.close()
                     log_file.close()
 
@@ -287,7 +312,7 @@ def main(m_id):
                     a_batch.append(action_vec)
                     entropy_record = []
 
-                    print "video count", video_count
+                    #print "video count", video_count
                     video_count += 1
 
 

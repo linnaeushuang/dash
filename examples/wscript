@@ -9,5 +9,11 @@ def build(bld):
     obj.source = 'dash-wifi.cc'
     obj = bld.create_ns3_program('my-program', ['dash'])
     obj.source = 'my_program.cc'
+    obj = bld.create_ns3_program('dash-star', ['dash'])
+    obj.source = 'dash-star.cc'
+    obj = bld.create_ns3_program('dash-example-star', ['dash'])
+    obj.source = 'dash-example-star.cc'
+    obj = bld.create_ns3_program('dash-time', ['dash'])
+    obj.source = 'dash-time.cc'
     
 
